@@ -45,24 +45,27 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
       <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div>
-          <h2 class="text-lg font-bold text-purple-400">1. Autenticação Stateless JWT (HS256) & Papéis RBAC</h2>
-          <p class="text-sm text-slate-400">Alterne entre <code class="text-purple-300">PERSONAL</code> (pode criar/editar/excluir treinos e alunos) e <code class="text-emerald-300">STUDENT</code> (apenas visualiza e faz check-in RPE).</p>
+          <h2 class="text-lg font-bold text-purple-400">1. Autenticação Stateless JWT (HS256) & Visão por Papel (RBAC)</h2>
+          <p class="text-sm text-slate-400">
+            <code class="text-purple-300">PERSONAL</code>: gerencia fichas, rotinas, exercícios e biometria •
+            <code class="text-emerald-300">STUDENT</code>: visualiza apenas sua ficha de treino e registra check-in RPE.
+          </p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button onclick="loginAs('carlos@gymflow.dev', 'Personal@2026')" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm font-semibold transition">👨‍🏫 Login como PERSONAL (Carlos)</button>
-          <button onclick="loginAs('rodrigo@gymflow.dev', 'Aluno@2026')" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold transition">🏃 Login como STUDENT (Rodrigo)</button>
-          <button onclick="testRbac403()" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-sm font-semibold transition">🛡️ Simular Bloqueio RBAC (403 RFC 9457)</button>
+          <button onclick="loginAs('carlos@gymflow.dev', 'Personal@2026')" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm font-semibold transition">👨‍🏫 Visão PERSONAL (Carlos)</button>
+          <button onclick="loginAs('rodrigo@gymflow.dev', 'Aluno@2026')" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold transition">🏃 Visão STUDENT (Rodrigo)</button>
+          <button onclick="testRbac403()" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-sm font-semibold transition">🛡️ Testar Bloqueio RBAC na API (403)</button>
         </div>
       </div>
       <div id="authStatus" class="text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300 overflow-x-auto">
-        Autenticando automaticamente como PERSONAL...
+        Autenticando automaticamente...
       </div>
     </section>
 
     <!-- 2. Conteúdo Extra: Analytics Biométrico (IMC) + RPE Borg -->
     <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-        <span class="text-xs uppercase tracking-wider text-purple-400 font-semibold">Aluno Selecionado</span>
+        <span class="text-xs uppercase tracking-wider text-purple-400 font-semibold">Perfil do Aluno</span>
         <h3 class="text-xl font-bold mt-1" id="studentNameCard">Rodrigo Aluno</h3>
         <p class="text-xs text-slate-400 mt-1" id="studentGoalCard">Meta: HYPERTROPHY</p>
       </div>
@@ -83,25 +86,25 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       </div>
     </section>
 
-    <!-- 3. Painel Principal: Fichas de Treino + Edição pelo Personal -->
+    <!-- 3. Painel Principal Adaptativo por Role (PERSONAL vs STUDENT) -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Coluna Esquerda (7 cols): Lista de Fichas, Rotinas e Exercícios com botões de ação -->
+      <!-- Coluna Esquerda (7 cols): Ficha de Treino -->
       <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-lg font-bold text-purple-400">2. Fichas de Treino Prescritas (SQLAlchemy 1:N selectinload)</h2>
-            <p class="text-xs text-slate-400">Como <b>PERSONAL</b>, você pode editar a ficha, adicionar ou remover exercícios e criar novas fichas.</p>
+            <h2 class="text-lg font-bold text-purple-400" id="workoutSectionTitle">2. Minha Ficha de Treino</h2>
+            <p class="text-xs text-slate-400" id="workoutSectionSubtitle">Carregada com SQLAlchemy 2.0 selectinload (sem queries N+1).</p>
           </div>
-          <button onclick="loadDashboardData()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 font-semibold">🔄 Recarregar</button>
+          <button onclick="loadDashboardData()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 font-semibold">🔄 Atualizar</button>
         </div>
 
         <div id="workoutsContainer" class="space-y-4 text-sm text-slate-300">
-          Carregando fichas de treino...
+          Carregando ficha de treino...
         </div>
 
-        <!-- Formulário do PERSONAL: Adicionar Exercício em uma Rotina -->
-        <div class="border-t border-slate-800 pt-5 space-y-3">
-          <h3 class="text-sm font-bold text-purple-300">➕ Prescrever Novo Exercício na Rotina (POST /api/v1/routines/{id}/exercises)</h3>
+        <!-- EXCLUSIVO PERSONAL: Formulário para Adicionar Exercício -->
+        <div id="personalAddExercisePanel" class="border-t border-slate-800 pt-5 space-y-3">
+          <h3 class="text-sm font-bold text-purple-300">➕ Prescrever Novo Exercício na Rotina (Exclusivo PERSONAL)</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="sm:col-span-2">
               <label class="text-xs text-slate-400">Rotina Destino</label>
@@ -150,13 +153,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
           </div>
           <button onclick="addExercise()" class="w-full py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 font-semibold text-xs transition">
-            ➕ Adicionar Exercício na Ficha (Exclusivo PERSONAL)
+            ➕ Adicionar Exercício na Ficha
           </button>
         </div>
 
-        <!-- Formulário do PERSONAL: Criar Nova Ficha ou Nova Divisão de Rotina -->
-        <div class="border-t border-slate-800 pt-5 space-y-3">
-          <h3 class="text-sm font-bold text-purple-300">📋 Criar Nova Divisão de Rotina na Ficha (POST /api/v1/workouts/{id}/routines)</h3>
+        <!-- EXCLUSIVO PERSONAL: Criar Nova Divisão de Rotina -->
+        <div id="personalAddRoutinePanel" class="border-t border-slate-800 pt-5 space-y-3">
+          <h3 class="text-sm font-bold text-purple-300">📋 Criar Nova Divisão de Rotina na Ficha (Exclusivo PERSONAL)</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label class="text-xs text-slate-400">Ficha de Treino</label>
@@ -184,10 +187,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Coluna Direita (5 cols): Edição do Personal + Check-in RPE do Aluno + Console JSON -->
+      <!-- Coluna Direita (5 cols): Painel Personal (oculto para Student) + Check-in RPE do Aluno + Console JSON -->
       <div class="lg:col-span-5 space-y-6">
-        <!-- Card Personal: Editar Ficha de Treino & Biometria do Aluno -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <!-- EXCLUSIVO PERSONAL: Editar Ficha de Treino & Biometria do Aluno -->
+        <div id="personalEditPanel" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
           <h2 class="text-lg font-bold text-purple-400">3. Painel do Personal: Editar Treino & Biometria</h2>
 
           <!-- Editar Metadados do Plano -->
@@ -246,8 +249,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         </div>
 
         <!-- Card Aluno: Check-in RPE -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 class="text-lg font-bold text-emerald-400">4. Check-in Pós-Treino do Aluno (Escala RPE 1–10)</h2>
+        <div class="bg-slate-900 border border-emerald-900/50 rounded-2xl p-6 space-y-4">
+          <div>
+            <h2 class="text-lg font-bold text-emerald-400">Check-in Pós-Treino do Aluno (Escala RPE 1–10)</h2>
+            <p class="text-xs text-slate-400">Registre a conclusão da rotina de hoje informando duração, esforço RPE Borg e feedback.</p>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400">Qual rotina você concluiu hoje?</label>
+            <select id="checkinRoutineSelect" class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs"></select>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-slate-400">Duração (minutos)</label>
@@ -263,7 +273,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <input id="feedbackInput" type="text" value="Excelente treino! Progredi carga no supino." class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs" />
           </div>
           <button onclick="submitExecution()" class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs transition">
-            ✅ Enviar Check-in (POST /api/v1/routines/{id}/executions)
+            ✅ Realizar Check-in de Treino (POST /api/v1/routines/{id}/executions)
           </button>
         </div>
 
@@ -278,6 +288,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
   <script>
     let currentToken = "";
+    let currentRole = "PERSONAL";
     let currentWorkoutId = "33333333-3333-3333-3333-333333333333";
     const STUDENT_ID = "22222222-2222-2222-2222-222222222222";
     const DEFAULT_ROUTINE_ID = "44444444-4444-4444-4444-444444444444";
@@ -285,6 +296,20 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     function logApiResult(status, data) {
       const prefix = status >= 400 ? `❌ HTTP ${status} (RFC 9457 Problem Details)` : `✅ HTTP ${status}`;
       document.getElementById("apiResponseLog").textContent = `${prefix}\n` + JSON.stringify(data, null, 2);
+    }
+
+    function applyRoleVisibility() {
+      const isPersonal = currentRole === "PERSONAL";
+      document.getElementById("personalAddExercisePanel").classList.toggle("hidden", !isPersonal);
+      document.getElementById("personalAddRoutinePanel").classList.toggle("hidden", !isPersonal);
+      document.getElementById("personalEditPanel").classList.toggle("hidden", !isPersonal);
+
+      document.getElementById("workoutSectionTitle").textContent = isPersonal
+        ? "2. Gestão de Fichas de Treino (Visão do Personal Trainer)"
+        : "2. Minha Ficha de Treino (Visão do Aluno — Somente Leitura)";
+      document.getElementById("workoutSectionSubtitle").textContent = isPersonal
+        ? "Como PERSONAL, você pode editar a ficha, adicionar divisões de rotina e prescrever ou remover exercícios."
+        : "Como STUDENT, você visualiza sua ficha prescrita pelo Personal e realiza o check-in pós-treino ao lado.";
     }
 
     async function loginAs(email, password) {
@@ -296,9 +321,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       const data = await res.json();
       if (res.ok) {
         currentToken = data.accessToken;
-        const badgeColor = data.user.role === "PERSONAL" ? "text-purple-400" : "text-emerald-400";
+        currentRole = data.user.role;
+        applyRoleVisibility();
+
+        const badgeColor = currentRole === "PERSONAL" ? "text-purple-400" : "text-emerald-400";
+        const modeDesc = currentRole === "PERSONAL"
+          ? "Modo Edição Habilitado (Personal Trainer)"
+          : "Modo Aluno (Apenas Visualização da Ficha & Check-in RPE)";
         document.getElementById("authStatus").innerHTML =
-          `✅ Autenticado como <b>${data.user.name}</b> (${data.user.email}) | Role RBAC: <b class="${badgeColor}">${data.user.role}</b><br>JWT: ${currentToken.substring(0, 72)}...`;
+          `✅ Autenticado como <b>${data.user.name}</b> (${data.user.email}) | Role RBAC: <b class="${badgeColor}">${currentRole}</b> — <span>${modeDesc}</span>`;
         logApiResult(res.status, data);
         await loadDashboardData();
       } else {
@@ -309,6 +340,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     async function loadDashboardData() {
       if (!currentToken) return;
       const headers = { "Authorization": `Bearer ${currentToken}` };
+      const isPersonal = currentRole === "PERSONAL";
 
       const anaRes = await fetch(`/api/v1/students/${STUDENT_ID}/analytics`, { headers });
       if (anaRes.ok) {
@@ -327,9 +359,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         const wkData = await wkRes.json();
         const container = document.getElementById("workoutsContainer");
         const routineSelect = document.getElementById("exRoutineSelect");
+        const checkinRoutineSelect = document.getElementById("checkinRoutineSelect");
         const workoutSelect = document.getElementById("routineWorkoutSelect");
 
         routineSelect.innerHTML = "";
+        checkinRoutineSelect.innerHTML = "";
         workoutSelect.innerHTML = "";
 
         if (wkData.data.length > 0) {
@@ -339,7 +373,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         container.innerHTML = wkData.data.map(plan => {
           workoutSelect.innerHTML += `<option value="${plan.id}">${plan.title}</option>`;
           plan.routines.forEach(r => {
-            routineSelect.innerHTML += `<option value="${r.id}">${plan.title} ➔ ${r.name}</option>`;
+            const optHtml = `<option value="${r.id}">${plan.title} ➔ ${r.name}</option>`;
+            routineSelect.innerHTML += optHtml;
+            checkinRoutineSelect.innerHTML += optHtml;
           });
 
           return `
@@ -361,8 +397,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                   <ul class="space-y-1.5 text-xs text-slate-300">
                     ${r.exercises.map(ex => `
                       <li class="flex items-center justify-between gap-2 bg-slate-950/70 px-3 py-1.5 rounded border border-slate-800/60">
-                        <span>• <b>${ex.name}</b> <span class="text-purple-400">[${ex.muscleGroup}]</span> — ${ex.sets}x ${ex.reps} • <b>${ex.weightKg || 0}kg</b> (descanso ${ex.restSeconds}s)</span>
-                        <button onclick="deleteExercise('${ex.id}')" title="Remover exercício" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-2 py-0.5 rounded bg-rose-950/50 hover:bg-rose-900/60 transition">🗑️ Excluir</button>
+                        <div>
+                          <span>• <b>${ex.name}</b> <span class="text-purple-400">[${ex.muscleGroup}]</span> — ${ex.sets}x ${ex.reps} • <b>${ex.weightKg || 0}kg</b> (descanso ${ex.restSeconds}s)</span>
+                          ${ex.notes ? `<div class="text-[11px] text-slate-400 pl-3 mt-0.5">💡 ${ex.notes}</div>` : ""}
+                        </div>
+                        ${isPersonal ? `<button onclick="deleteExercise('${ex.id}')" title="Remover exercício" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-2 py-0.5 rounded bg-rose-950/50 hover:bg-rose-900/60 transition shrink-0">🗑️ Excluir</button>` : ""}
                       </li>
                     `).join("")}
                   </ul>
@@ -473,7 +512,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     }
 
     async function submitExecution() {
-      const routineId = document.getElementById("exRoutineSelect").value || DEFAULT_ROUTINE_ID;
+      const routineId = document.getElementById("checkinRoutineSelect").value || DEFAULT_ROUTINE_ID;
       const durationMinutes = parseInt(document.getElementById("durationInput").value, 10);
       const rpeScore = parseInt(document.getElementById("rpeInput").value, 10);
       const feedback = document.getElementById("feedbackInput").value;

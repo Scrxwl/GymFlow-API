@@ -73,7 +73,18 @@ class InvalidParam(BaseModel):
 class ApiError(BaseModel):
     """Formato padronizado de resposta de erro segundo a RFC 9457 (Problem Details)."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "type": "https://api.gymflow.dev/errors/unauthorized",
+                "title": "Não Autenticado",
+                "status": 401,
+                "detail": "Token ausente. Envie o cabeçalho 'Authorization: Bearer <token>'.",
+                "instance": "/api/v1/auth/me",
+            }
+        },
+    )
 
     type: str = Field(..., description="URI absoluta identificando o tipo de erro.")
     title: str = Field(..., description="Resumo legível para humanos da categoria do erro.")
@@ -104,17 +115,29 @@ class PaginationMeta(BaseModel):
 
 
 class RegisterUserDTO(BaseModel):
-    """Payload para registro inicial de Personal Trainer ou Aluno."""
+    """Dados de entrada para registro inicial de Personal Trainer ou Aluno."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "name": "Fernanda Costa",
+                "email": "fernanda@gymflow.dev",
+                "password": "Personal@2026",
+                "role": "PERSONAL",
+                "cref": "123456-G/SP",
+                "phone": "+5511988887777",
+            }
+        },
+    )
 
     name: str = Field(..., min_length=3, max_length=100, description="Nome completo do usuário.")
     email: str = Field(..., description="E-mail de acesso do usuário.")
-    password: str = Field(..., min_length=6, max_length=64, description="Senha de acesso.")
-    role: UserRole = Field(..., description="Papel do usuário (PERSONAL ou STUDENT).")
+    password: str = Field(..., min_length=6, max_length=64, description="Senha de acesso (mínimo de 6 caracteres).")
+    role: UserRole = Field(..., description="Papel de acesso no sistema (PERSONAL ou STUDENT).")
     cref: Optional[str] = Field(
         default=None,
-        description="Registro no CREF (obrigatório quando role=PERSONAL).",
+        description="Registro profissional no CREF (obrigatório quando role=PERSONAL).",
     )
     phone: Optional[str] = Field(default=None, description="Telefone de contato opcional.")
 
@@ -136,10 +159,25 @@ class RegisterUserDTO(BaseModel):
 class LoginRequestDTO(BaseModel):
     """Credenciais de autenticação para emissão de token JWT."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "email": "carlos@gymflow.dev",
+                "password": "Personal@2026",
+            }
+        },
+    )
 
-    email: str = Field(..., description="E-mail do usuário.")
-    password: str = Field(..., min_length=6, description="Senha do usuário.")
+    email: str = Field(
+        ...,
+        description="E-mail cadastrado do usuário (ex: carlos@gymflow.dev para PERSONAL ou rodrigo@gymflow.dev para STUDENT).",
+    )
+    password: str = Field(
+        ...,
+        min_length=6,
+        description="Senha do usuário (ex: Personal@2026 para PERSONAL ou Aluno@2026 para STUDENT).",
+    )
 
     @field_validator("email")
     @classmethod
@@ -151,28 +189,64 @@ class LoginRequestDTO(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Dados públicos do usuário autenticado."""
+    """Dados públicos do perfil do usuário autenticado."""
 
-    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": "11111111-1111-1111-1111-111111111111",
+                "name": "Carlos Personal",
+                "email": "carlos@gymflow.dev",
+                "role": "PERSONAL",
+                "cref": "123456-G/SP",
+                "phone": "+5511999990001",
+                "createdAt": "2026-02-10T09:00:00Z",
+            }
+        },
+    )
 
-    id: str = Field(..., description="UUID do usuário.")
+    id: str = Field(..., description="Identificador único (UUID) do usuário.")
     name: str = Field(..., description="Nome completo do usuário.")
     email: str = Field(..., description="E-mail do usuário.")
     role: UserRole = Field(..., description="Papel de acesso (PERSONAL ou STUDENT).")
-    cref: Optional[str] = Field(default=None, description="Registro CREF (se PERSONAL).")
+    cref: Optional[str] = Field(default=None, description="Registro profissional CREF (preenchido para PERSONAL).")
     phone: Optional[str] = Field(default=None, description="Telefone de contato.")
-    createdAt: datetime = Field(..., description="Data e hora de criação do registro.")
+    createdAt: datetime = Field(..., description="Data e hora de criação do cadastro (UTC).")
 
 
 class AuthTokenResponse(BaseModel):
-    """Envelope de resposta contendo o token JWT Bearer e dados do usuário."""
+    """Envelope de resposta contendo o token JWT e os dados do usuário autenticado."""
 
-    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImNhcmxvcyBneW1mbG93LmRldiIsInJvbGUiOiJQRVJTT05BTCJ9.exemplo",
+                "tokenType": "bearer",
+                "expiresIn": 3600,
+                "user": {
+                    "id": "11111111-1111-1111-1111-111111111111",
+                    "name": "Carlos Personal",
+                    "email": "carlos@gymflow.dev",
+                    "role": "PERSONAL",
+                    "cref": "123456-G/SP",
+                    "phone": "+5511999990001",
+                    "createdAt": "2026-02-10T09:00:00Z",
+                },
+            }
+        },
+    )
 
-    accessToken: str = Field(..., description="Token JWT assinado com HS256.")
-    tokenType: str = Field(default="bearer", description="Tipo do token.")
-    expiresIn: int = Field(default=3600, description="Tempo de expiração em segundos.")
-    user: UserResponse = Field(..., description="Perfil do usuário autenticado.")
+    accessToken: str = Field(
+        ...,
+        description="Token JWT assinado com HS256. Copie este valor e cole no botão 'Autorizar JWT' para acessar rotas protegidas como GET /api/v1/auth/me.",
+    )
+    tokenType: str = Field(default="bearer", description="Tipo do token de autenticação (sempre 'bearer').")
+    expiresIn: int = Field(default=3600, description="Tempo de validade do token em segundos (padrão: 3600s = 1 hora).")
+    user: UserResponse = Field(..., description="Dados cadastrais do usuário autenticado.")
 
 
 # ============================================================================

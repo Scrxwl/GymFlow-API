@@ -113,3 +113,76 @@ def test_student_analytics_bmi_and_rpe_metrics_and_dashboard(
     dash_res = client.get("/")
     assert dash_res.status_code == 200
     assert "GymFlow API" in dash_res.text
+
+
+def test_student_and_personal_horizontal_rbac_isolation(
+    client: TestClient,
+    personal_headers: dict[str, str],
+    student_headers: dict[str, str],
+) -> None:
+    """Garante isolamento horizontal (IDOR): um aluno ou outro Personal não acessa carteira alheia."""
+    # Personal 1 cadastra um segundo aluno
+    create_res = client.post(
+        "/api/v1/students",
+        json={
+            "name": "Lucas Outro Aluno",
+            "email": "lucas.outro@gymflow.dev",
+            "password": "Lucas@2026",
+            "profile": {"goal": "HYPERTROPHY"},
+        },
+        headers=personal_headers,
+    )
+    assert create_res.status_code == 201
+    other_student_id = create_res.json()["id"]
+
+    # Rodrigo (SEED_STUDENT_ID) tenta consultar perfil e analytics de Lucas -> 403 Forbidden
+    res_get = client.get(f"/api/v1/students/{other_student_id}", headers=student_headers)
+    assert res_get.status_code == 403
+    assert res_get.json()["type"] == "https://api.gymflow.dev/errors/forbidden"
+
+    res_ana = client.get(
+        f"/api/v1/students/{other_student_id}/analytics",
+        headers=student_headers,
+    )
+    assert res_ana.status_code == 403
+
+    # Registra e autentica um segundo Personal Trainer
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "name": "Bruno Outro Personal",
+            "email": "bruno.personal@gymflow.dev",
+            "password": "Personal@2026",
+            "role": "PERSONAL",
+            "cref": "999888-G/SP",
+        },
+    )
+    login_other = client.post(
+        "/api/v1/auth/login",
+        json={"email": "bruno.personal@gymflow.dev", "password": "Personal@2026"},
+    )
+    other_personal_headers = {
+        "Authorization": f"Bearer {login_other.json()['accessToken']}"
+    }
+
+    # Segundo Personal tenta consultar, editar ou excluir aluno do Personal 1 -> 403 Forbidden
+    assert (
+        client.get(
+            f"/api/v1/students/{SEED_STUDENT_ID}", headers=other_personal_headers
+        ).status_code
+        == 403
+    )
+    assert (
+        client.patch(
+            f"/api/v1/students/{SEED_STUDENT_ID}",
+            json={"name": "Tentativa Indevida"},
+            headers=other_personal_headers,
+        ).status_code
+        == 403
+    )
+    assert (
+        client.delete(
+            f"/api/v1/students/{SEED_STUDENT_ID}", headers=other_personal_headers
+        ).status_code
+        == 403
+    )

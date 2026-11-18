@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..exceptions import ApiErrorException, validate_uuid_param
-from ..models import ExecutionModel, UserModel, WorkoutRoutineModel
-from ..schemas import CreateExecutionDTO, ExecutionResponse
+from ..models import ExecutionModel, UserModel, WorkoutPlanModel, WorkoutRoutineModel
+from ..schemas import CreateExecutionDTO, ExecutionResponse, UserRole
 from ..security import get_current_user
 
 router = APIRouter(prefix="/api/v1", tags=["Executions"])
@@ -39,6 +39,20 @@ def create_execution(
         raise ApiErrorException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Rotina de treino com id '{valid_routine_id}' não foi encontrada.",
+            instance=str(request.url.path),
+        )
+
+    plan = db.scalar(
+        select(WorkoutPlanModel).where(WorkoutPlanModel.id == routine.workout_plan_id)
+    )
+    if (
+        current_user.role == UserRole.STUDENT.value
+        and plan is not None
+        and plan.student_id != current_user.id
+    ):
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Um aluno só pode registrar check-in em rotinas vinculadas ao seu próprio plano de treino.",
             instance=str(request.url.path),
         )
 
@@ -80,6 +94,24 @@ def list_student_executions(
         raise ApiErrorException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Aluno com id '{valid_student_id}' não foi encontrado.",
+            instance=str(request.url.path),
+        )
+
+    if current_user.role == UserRole.STUDENT.value and current_user.id != student.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Um aluno só pode consultar o seu próprio histórico de execuções.",
+            instance=str(request.url.path),
+        )
+
+    if (
+        current_user.role == UserRole.PERSONAL.value
+        and student.personal_id is not None
+        and student.personal_id != current_user.id
+    ):
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este aluno pertence à carteira de outro Personal Trainer.",
             instance=str(request.url.path),
         )
 

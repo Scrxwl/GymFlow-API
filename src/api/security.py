@@ -27,7 +27,18 @@ JWT_SECRET_KEY = os.getenv(
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_SECONDS = 3600
 
-bearer_scheme = HTTPBearer(auto_error=False)
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="HTTPBearer",
+    description=(
+        "Autenticação via Token JWT (HS256).\n\n"
+        "**Como obter e usar o token passo a passo:**\n"
+        "1. Execute `POST /api/v1/auth/login` com `carlos@gymflow.dev` / `Personal@2026` (ou use os botões de **Autenticação Rápida em 1 Clique** no topo desta página).\n"
+        "2. Copie o valor do campo `accessToken` retornado no JSON.\n"
+        "3. Cole abaixo apenas o token (sem aspas e sem a palavra `Bearer `) e clique em **Autorizar JWT**.\n"
+        "4. Agora execute `GET /api/v1/auth/me` ou qualquer outra rota protegida!"
+    ),
+)
 
 
 def hash_password(password: str) -> str:

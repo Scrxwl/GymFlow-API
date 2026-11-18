@@ -98,6 +98,11 @@ def init_db_and_seed(db: Session, target_engine: Engine | None = None) -> None:
         )
         db.add(student_user)
         db.flush()
+
+    student_profile = db.scalar(
+        select(StudentProfileModel).where(StudentProfileModel.student_id == SEED_STUDENT_ID)
+    )
+    if not student_profile:
         db.add(
             StudentProfileModel(
                 student_id=SEED_STUDENT_ID,

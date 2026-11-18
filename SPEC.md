@@ -40,8 +40,8 @@ Extraídos diretamente dos 26 `Data Schemas` do Apidog (`https://3f9huyoq5b.apid
 ## 4. Matriz de Controle de Acesso (RBAC: `PERSONAL` vs. `STUDENT`)
 - **`POST /api/v1/auth/register` e `POST /api/v1/auth/login`**: Públicos.
 - **`GET /api/v1/auth/me`**: Autenticado (`PERSONAL` ou `STUDENT`).
-- **`GET /api/v1/students`, `POST /api/v1/students`, `PATCH /api/v1/students/{studentId}`, `DELETE /api/v1/students/{studentId}`**: Exclusivos para `PERSONAL` (retornam `401` sem token e `403 Forbidden` RFC 9457 para `STUDENT`).
-- **`GET /api/v1/students/{studentId}`**: Acessível pelo `PERSONAL` responsável ou pelo próprio `STUDENT`.
-- **`POST /api/v1/workouts`, `PATCH /api/v1/workouts/{workoutId}`, `DELETE /api/v1/workouts/{workoutId}`, `POST /api/v1/workouts/{workoutId}/routines`, `POST /api/v1/routines/{routineId}/exercises`, `DELETE /api/v1/exercises/{exerciseId}`**: Exclusivos para `PERSONAL` (`403 Forbidden` para `STUDENT`).
-- **`GET /api/v1/workouts` e `GET /api/v1/workouts/{workoutId}`**: Autenticados (`PERSONAL` ou `STUDENT`).
-- **`POST /api/v1/routines/{routineId}/executions` e `GET /api/v1/students/{studentId}/executions`**: Autenticados (`STUDENT` ou `PERSONAL`).
+- **`GET /api/v1/students`, `POST /api/v1/students`, `PATCH /api/v1/students/{studentId}`, `DELETE /api/v1/students/{studentId}`**: Exclusivos para `PERSONAL` (retornam `401` sem token e `403 Forbidden` RFC 9457 para `STUDENT` ou para `PERSONAL` não responsável pela carteira do aluno).
+- **`GET /api/v1/students/{studentId}` e `GET /api/v1/students/{studentId}/analytics`**: Acessíveis apenas pelo `PERSONAL` responsável pela carteira ou pelo próprio `STUDENT` (`403 Forbidden` para outros alunos ou outros personais).
+- **`POST /api/v1/workouts`, `PATCH /api/v1/workouts/{workoutId}`, `DELETE /api/v1/workouts/{workoutId}`, `POST /api/v1/workouts/{workoutId}/routines`, `POST /api/v1/routines/{routineId}/exercises`, `DELETE /api/v1/exercises/{exerciseId}`**: Exclusivos para o `PERSONAL` titular da carteira (`403 Forbidden` para `STUDENT` ou outros personais).
+- **`GET /api/v1/workouts` e `GET /api/v1/workouts/{workoutId}`**: Autenticados (`PERSONAL` titular ou `STUDENT` destinatário da ficha).
+- **`POST /api/v1/routines/{routineId}/executions` e `GET /api/v1/students/{studentId}/executions`**: Autenticados (`STUDENT` titular da rotina/histórico ou `PERSONAL` responsável).

@@ -1284,6 +1284,651 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 </html>
 """
 
+SWAGGER_DOCS_HTML = """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymFlow API — Documentação Interativa e Guia Passo a Passo (/docs)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css" />
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .gf-topbar {
+      background: #0f172a;
+      color: #f8fafc;
+      border-bottom: 1px solid #334155;
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .gf-topbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .gf-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .gf-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: #7c3aed;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gf-brand h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .gf-brand p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .gf-nav-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .gf-status-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #e2e8f0;
+    }
+    .gf-status-pill.active-personal {
+      background: #2e1065;
+      border-color: #8b5cf6;
+      color: #ddd6fe;
+    }
+    .gf-status-pill.active-student {
+      background: #064e3b;
+      border-color: #10b981;
+      color: #a7f3d0;
+    }
+    .gf-link-btn {
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 8px;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      transition: background 0.15s ease;
+    }
+    .gf-link-btn:hover {
+      background: #334155;
+    }
+    .gf-guide-wrap {
+      max-width: 1280px;
+      margin: 20px auto 8px;
+      padding: 0 20px;
+    }
+    .gf-guide-panel {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+    }
+    .gf-guide-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .gf-guide-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    .gf-guide-header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #334155;
+      max-width: 72ch;
+      line-height: 1.5;
+    }
+    .gf-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .gf-step-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .gf-step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 6px;
+    }
+    .gf-step-desc {
+      font-size: 12.5px;
+      color: #334155;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .gf-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .gf-btn {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      transition: filter 0.15s ease;
+    }
+    .gf-btn:hover {
+      filter: brightness(1.08);
+    }
+    .gf-btn-personal {
+      background: #6d28d9;
+      color: #ffffff;
+    }
+    .gf-btn-student {
+      background: #047857;
+      color: #ffffff;
+    }
+    .gf-btn-clear {
+      background: #be123c;
+      color: #ffffff;
+    }
+    .gf-btn-focus {
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .gf-btn-secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .gf-live-result {
+      margin-top: 16px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 12px;
+    }
+    .gf-live-result-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .gf-live-pre {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-x: auto;
+      max-height: 220px;
+      color: #a7f3d0;
+    }
+    .gf-live-pre.is-error {
+      color: #fda4af;
+    }
+    .gf-tests-details {
+      margin-top: 14px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: #1e293b;
+    }
+    .gf-tests-details summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .gf-tests-details ol {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      line-height: 1.6;
+    }
+    .swagger-ui .topbar {
+      display: none !important;
+    }
+    .swagger-ui .info {
+      margin: 20px 0 !important;
+    }
+    #operations-Authentication-get_me_api_v1_auth_me_get {
+      border-width: 2px !important;
+      box-shadow: 0 4px 16px rgba(109, 40, 217, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <header class="gf-topbar">
+    <div class="gf-topbar-inner">
+      <div class="gf-brand">
+        <div class="gf-logo">GF</div>
+        <div>
+          <h1>GymFlow API — Documentação Interativa e Guia Passo a Passo</h1>
+          <p>Fatec Ribeirão Preto • João Gabriel Cardoso • Rodrigo de Azevedo Jr. • Thales de Oliveira Silva</p>
+        </div>
+      </div>
+      <div class="gf-nav-actions">
+        <span id="gfAuthBadge" class="gf-status-pill">Sessão JWT: Não autenticada (clique no Passo 1 abaixo)</span>
+        <a href="#/Authentication/get_me_api_v1_auth_me_get" onclick="focusGetMeEndpoint()" class="gf-link-btn">Ir para GET /api/v1/auth/me</a>
+        <a href="/" class="gf-link-btn">Painel Visual (/)</a>
+        <a href="/openapi.json" target="_blank" class="gf-link-btn">Contrato JSON (/openapi.json)</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="gf-guide-wrap">
+    <div class="gf-guide-panel">
+      <div class="gf-guide-header">
+        <div>
+          <h2>Guia Passo a Passo: Como Autenticar e Testar <code>GET /api/v1/auth/me</code></h2>
+          <p>
+            A rota <code>GET /api/v1/auth/me</code> (<code>#/Authentication/get_me_api_v1_auth_me_get</code>) exige um
+            <strong>Token JWT (HS256)</strong> válido no cabeçalho <code>Authorization: Bearer &lt;token&gt;</code>.
+            Siga os 3 passos abaixo para autenticar em 1 clique ou manualmente e inspecionar as respostas <code>200</code> e <code>401 (RFC 9457)</code>.
+          </p>
+        </div>
+        <button type="button" class="gf-btn gf-btn-focus" onclick="focusGetMeEndpoint()">
+          Focar na Rota GET /api/v1/auth/me Abaixo
+        </button>
+      </div>
+
+      <div class="gf-steps-grid">
+        <!-- PASSO 1 -->
+        <div class="gf-step-box">
+          <div>
+            <h3 class="gf-step-title">Passo 1 — Gerar e Aplicar o Token JWT</h3>
+            <p class="gf-step-desc">
+              Clique em um dos perfis abaixo para autenticar em <code>POST /api/v1/auth/login</code> e preencher
+              automaticamente o cadeado de autorização JWT desta página:
+            </p>
+          </div>
+          <div class="gf-btn-group">
+            <button type="button" class="gf-btn gf-btn-personal" onclick="quickAuthorizeSwagger('PERSONAL')">
+              1A. Autenticar como PERSONAL (Carlos)
+            </button>
+            <button type="button" class="gf-btn gf-btn-student" onclick="quickAuthorizeSwagger('STUDENT')">
+              1B. Autenticar como STUDENT (Rodrigo)
+            </button>
+          </div>
+        </div>
+
+        <!-- PASSO 2 -->
+        <div class="gf-step-box">
+          <div>
+            <h3 class="gf-step-title">Passo 2 — Executar <code>GET /api/v1/auth/me</code></h3>
+            <p class="gf-step-desc">
+              Com o token aplicado, clique no botão abaixo (ou no botão <strong>Executar Requisição</strong> dentro da rota
+              <code>GET /api/v1/auth/me</code>) para consultar os dados do usuário logado:
+            </p>
+          </div>
+          <div class="gf-btn-group">
+            <button type="button" class="gf-btn gf-btn-focus" onclick="executeGetMeLive(true)">
+              2. Executar GET /api/v1/auth/me Agora (200)
+            </button>
+            <button type="button" class="gf-btn gf-btn-secondary" onclick="copyCurrentJwtToken()">
+              Copiar Token JWT Atual
+            </button>
+          </div>
+        </div>
+
+        <!-- PASSO 3 -->
+        <div class="gf-step-box">
+          <div>
+            <h3 class="gf-step-title">Passo 3 — Testar Bloqueio sem Token (Erro 401 RFC 9457)</h3>
+            <p class="gf-step-desc">
+              Para comprovar a proteção da rota, remova o token JWT e execute <code>GET /api/v1/auth/me</code> para receber o erro
+              padronizado <code>ApiError</code> (<code>application/problem+json</code>):
+            </p>
+          </div>
+          <div class="gf-btn-group">
+            <button type="button" class="gf-btn gf-btn-clear" onclick="clearSwaggerAuthAndTest401()">
+              3. Remover Token e Simular Erro 401 (RFC 9457)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel de Resultado Ao Vivo -->
+      <div class="gf-live-result">
+        <div class="gf-live-result-header">
+          <span id="gfLiveTitle">Inspetor Rápido de Resposta — GET /api/v1/auth/me</span>
+          <span id="gfLiveHeaderSent" style="font-weight:400; font-family:monospace; color:#94a3b8;">Cabeçalho: (nenhum token enviado ainda)</span>
+        </div>
+        <pre id="gfLiveJson" class="gf-live-pre">Clique em "1A. Autenticar como PERSONAL (Carlos)" ou "2. Executar GET /api/v1/auth/me Agora" para ver o passo a passo em execução real.</pre>
+      </div>
+
+      <!-- Explicação Passo a Passo dos Testes Automatizados (pytest) -->
+      <details class="gf-tests-details">
+        <summary>Ver Passo a Passo Explicado nos Testes Automatizados (<code>pytest -v</code> em <code>src/api/tests/</code>)</summary>
+        <ol>
+          <li><strong><code>test_auth.py</code> (Autenticação e <code>GET /api/v1/auth/me</code>):</strong> Explica passo a passo o cadastro (<code>POST /register</code>), a emissão do token JWT <code>HS256</code> (<code>POST /login</code>), a consulta autenticada em <code>GET /api/v1/auth/me</code> para <code>PERSONAL</code> e <code>STUDENT</code> (<code>200</code>), e os bloqueios <code>401</code> (sem token, formato inválido ou token adulterado), <code>409</code> (e-mail duplicado) e <code>422</code> (<code>PERSONAL</code> sem <code>cref</code>).</li>
+          <li><strong><code>test_students.py</code> (Carteira de Alunos, Perfil 1:1 e IMC/RPE):</strong> Explica passo a passo a listagem paginada com <code>selectinload</code>, cadastro, atualização biométrica, cálculo de IMC (<code>/analytics</code>) e isolamento horizontal RBAC (<code>403</code>).</li>
+          <li><strong><code>test_workouts.py</code> (Fichas de Treino, Rotinas e Exercícios 1:N):</strong> Explica passo a passo o carregamento aninhado com <code>selectinload</code> (prevenção de queries N+1), prescrição em cascata e proteção RBAC entre alunos e personais.</li>
+          <li><strong><code>test_executions.py</code> (Check-in de Treino com Escala RPE Borg 1–10):</strong> Explica passo a passo o registro de sessão concluída pelo aluno e consulta de histórico com bloqueio de acesso cruzado (<code>403</code>).</li>
+          <li><strong><code>test_errors.py</code> (Conformidade RFC 9457):</strong> Explica passo a passo a validação de todos os códigos de erro (<code>400</code>, <code>401</code>, <code>403</code>, <code>404</code>, <code>422</code>) no contrato <code>ApiError</code>.</li>
+        </ol>
+      </details>
+    </div>
+  </section>
+
+  <main id="swagger-ui"></main>
+
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    let activeSwaggerToken = "";
+    let activeUserSummary = "";
+
+    const TRANSLATION_MAP = {
+      "Authorize": "Autorizar JWT",
+      "Try it out": "Habilitar Teste",
+      "Cancel": "Cancelar",
+      "Execute": "Executar Requisição",
+      "Clear": "Limpar",
+      "No parameters": "Nenhum parâmetro de rota ou consulta (utiliza apenas o token JWT no cabeçalho Authorization)",
+      "Parameters": "Parâmetros da Requisição",
+      "Request body": "Corpo da Requisição (JSON)",
+      "Responses": "Respostas HTTP da Rota",
+      "Server response": "Resposta Recebida do Servidor (Ao Vivo)",
+      "Response body": "Corpo da Resposta (JSON)",
+      "Response headers": "Cabeçalhos HTTP da Resposta",
+      "Code": "Código HTTP",
+      "Description": "Descrição",
+      "Links": "Vínculos",
+      "No links": "Sem vínculos adicionais",
+      "Schemas": "Modelos de Dados (Schemas Pydantic v2)",
+      "Example Value": "Valor de Exemplo",
+      "Schema": "Estrutura do Modelo",
+      "Available authorizations": "Autorização JWT (Bearer Token)",
+      "Logout": "Remover Token",
+      "Close": "Fechar"
+    };
+
+    function translateSwaggerLabels() {
+      const selectors = [
+        ".swagger-ui .btn",
+        ".swagger-ui .opblock-section-header h4",
+        ".swagger-ui .responses-wrapper h4",
+        ".swagger-ui .opblock-description-wrapper p",
+        ".swagger-ui th.col_header",
+        ".swagger-ui td.response-col_links",
+        ".swagger-ui section.models h4 span",
+        ".swagger-ui .tablinks",
+        ".swagger-ui .modal-ux-header h3"
+      ];
+      document.querySelectorAll(selectors.join(",")).forEach(el => {
+        if (el.children.length === 0) {
+          const text = el.textContent.trim();
+          if (TRANSLATION_MAP[text]) {
+            el.textContent = TRANSLATION_MAP[text];
+          }
+        } else if (el.classList.contains("authorize")) {
+          const span = el.querySelector("span");
+          if (span && span.textContent.trim() === "Authorize") {
+            span.textContent = "Autorizar JWT";
+          }
+        }
+      });
+    }
+
+    function applyTokenToSwagger(token, userObj) {
+      activeSwaggerToken = token || "";
+      const badge = document.getElementById("gfAuthBadge");
+      if (window.ui) {
+        if (activeSwaggerToken) {
+          window.ui.preauthorizeApiKey("HTTPBearer", activeSwaggerToken);
+        } else if (window.ui.authActions && window.ui.authActions.logout) {
+          window.ui.authActions.logout(["HTTPBearer"]);
+        }
+      }
+      if (activeSwaggerToken && userObj) {
+        activeUserSummary = `${userObj.name} (${userObj.role})`;
+        badge.textContent = `Token JWT Ativo: ${userObj.name} • Papel: ${userObj.role}`;
+        badge.className = userObj.role === "PERSONAL"
+          ? "gf-status-pill active-personal"
+          : "gf-status-pill active-student";
+      } else {
+        activeUserSummary = "";
+        badge.textContent = "Sessão JWT: Sem Token Ativo (Modo 401 Não Autenticado)";
+        badge.className = "gf-status-pill";
+      }
+    }
+
+    function focusGetMeEndpoint() {
+      if (window.location.hash !== "#/Authentication/get_me_api_v1_auth_me_get") {
+        window.location.hash = "#/Authentication/get_me_api_v1_auth_me_get";
+      }
+      setTimeout(() => {
+        const block = document.getElementById("operations-Authentication-get_me_api_v1_auth_me_get");
+        if (block) {
+          if (!block.classList.contains("is-open")) {
+            const summary = block.querySelector(".opblock-summary");
+            if (summary) summary.click();
+          }
+          block.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+    }
+
+    async function quickAuthorizeSwagger(role) {
+      const liveTitle = document.getElementById("gfLiveTitle");
+      const liveJson = document.getElementById("gfLiveJson");
+      liveTitle.textContent = `Passo 1 em execução: Autenticando perfil ${role} em POST /api/v1/auth/login...`;
+
+      let credentials = [
+        { email: "carlos@gymflow.dev", password: "Personal@2026" }
+      ];
+      if (role === "STUDENT") {
+        credentials = [
+          { email: "rodrigo@gymflow.dev", password: "Aluno@2026" },
+          { email: "rodrigoyoshi@gymflow.com", password: "aluno123" }
+        ];
+      }
+
+      let loginData = null;
+      for (const cred of credentials) {
+        const res = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cred)
+        });
+        loginData = await res.json();
+        if (res.ok && loginData.accessToken) {
+          break;
+        }
+      }
+
+      if (loginData && loginData.accessToken) {
+        applyTokenToSwagger(loginData.accessToken, loginData.user);
+        await executeGetMeLive(false);
+        focusGetMeEndpoint();
+      } else {
+        liveJson.classList.add("is-error");
+        liveJson.textContent = JSON.stringify(loginData, null, 2);
+      }
+    }
+
+    async function executeGetMeLive(scrollToRoute = true) {
+      const liveTitle = document.getElementById("gfLiveTitle");
+      const liveHeader = document.getElementById("gfLiveHeaderSent");
+      const liveJson = document.getElementById("gfLiveJson");
+
+      const headers = {};
+      if (activeSwaggerToken) {
+        headers["Authorization"] = `Bearer ${activeSwaggerToken}`;
+        const shortToken = activeSwaggerToken.slice(0, 28) + "...";
+        liveHeader.textContent = `Cabeçalho enviado: Authorization: Bearer ${shortToken}`;
+      } else {
+        liveHeader.textContent = "Cabeçalho enviado: (sem cabeçalho Authorization)";
+      }
+
+      const res = await fetch("/api/v1/auth/me", { method: "GET", headers });
+      const data = await res.json();
+
+      if (res.ok) {
+        liveTitle.textContent = `Passo 2 Concluído — GET /api/v1/auth/me retornou HTTP ${res.status} (Perfil ${data.role})`;
+        liveJson.classList.remove("is-error");
+      } else {
+        liveTitle.textContent = `Passo 3 Concluído — GET /api/v1/auth/me retornou HTTP ${res.status} (Erro Padronizado RFC 9457)`;
+        liveJson.classList.add("is-error");
+      }
+      liveJson.textContent = JSON.stringify(data, null, 2);
+
+      if (scrollToRoute) {
+        focusGetMeEndpoint();
+      }
+    }
+
+    async function clearSwaggerAuthAndTest401() {
+      applyTokenToSwagger("", null);
+      await executeGetMeLive(true);
+    }
+
+    async function copyCurrentJwtToken() {
+      const liveTitle = document.getElementById("gfLiveTitle");
+      if (!activeSwaggerToken) {
+        liveTitle.textContent = "Nenhum token ativo no momento. Clique primeiro no Passo 1A (PERSONAL) ou 1B (STUDENT).";
+        return;
+      }
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(activeSwaggerToken);
+        liveTitle.textContent = `Token JWT de ${activeUserSummary} copiado para a área de transferência!`;
+      }
+    }
+
+    window.addEventListener("load", () => {
+      window.ui = SwaggerUIBundle({
+        url: "/openapi.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        persistAuthorization: true,
+        tryItOutEnabled: true,
+        displayRequestDuration: true,
+        docExpansion: "list",
+        defaultModelsExpandDepth: 1,
+        filter: true,
+        presets: [
+          SwaggerUIBundle.presets.apis
+        ],
+        onComplete: () => {
+          translateSwaggerLabels();
+          if (window.location.hash === "#/Authentication/get_me_api_v1_auth_me_get") {
+            focusGetMeEndpoint();
+          }
+        }
+      });
+
+      const observer = new MutationObserver(() => {
+        translateSwaggerLabels();
+      });
+      observer.observe(document.getElementById("swagger-ui"), {
+        childList: true,
+        subtree: true
+      });
+    });
+  </script>
+</body>
+</html>
+"""
+
+OPENAPI_TAGS_METADATA = [
+    {
+        "name": "Authentication",
+        "description": (
+            "**Autenticação Stateless via JWT (`HS256`) e Perfil Logado (`/api/v1/auth`)** — "
+            "Passo 1: Registre um usuário (`/register`) ou utilize as contas de exemplo no login (`/login`). "
+            "Passo 2: Autentique o token JWT no cadeado (ou em 1 clique no topo da página). "
+            "Passo 3: Consulte os dados do usuário autenticado em `GET /api/v1/auth/me`."
+        ),
+    },
+    {
+        "name": "Students",
+        "description": (
+            "**Gestão de Alunos, Perfil Biométrico 1:1 e Indicadores IMC/RPE (`/api/v1/students`)** — "
+            "Rotas de carteira restritas ao papel `PERSONAL` e consulta individual/biométrica autorizada ao `PERSONAL` responsável ou ao próprio `STUDENT`."
+        ),
+    },
+    {
+        "name": "Workouts",
+        "description": (
+            "**Planos de Treino, Divisões de Rotina (A/B/C) e Exercícios (`/api/v1/workouts`)** — "
+            "Carregamento otimizado com `selectinload` no SQLAlchemy 2.0 (sem queries N+1). Prescrição exclusiva para `PERSONAL`; leitura liberada para o `STUDENT` destinatário."
+        ),
+    },
+    {
+        "name": "Executions",
+        "description": (
+            "**Check-in de Treino e Histórico de Esforço RPE Borg 1–10 (`/api/v1/routines/{routineId}/executions`)** — "
+            "Registro de sessões concluídas pelo aluno com nota de percepção de esforço e feedback qualitativo."
+        ),
+    },
+    {
+        "name": "Health",
+        "description": "**Monitoramento de Saúde e Disponibilidade da API (`/health`)**.",
+    },
+]
+
+PARAM_TITLE_TRANSLATIONS = {
+    "page": "Página",
+    "limit": "Limite por Página",
+    "search": "Busca por Nome ou E-mail",
+    "goal": "Objetivo Físico",
+    "status": "Status da Ficha",
+    "studentId": "UUID do Aluno",
+    "workoutId": "UUID da Ficha de Treino",
+    "routineId": "UUID da Rotina de Treino",
+    "exerciseId": "UUID do Exercício",
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -1299,12 +1944,72 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="GymFlow API — Gestão de Treinos e Acompanhamento Físico",
     description=(
-        "API RESTful com SQLAlchemy 2.0 ORM, Autenticação Stateless JWT/RBAC "
-        "(PERSONAL & STUDENT) e tratamento de erros RFC 9457 (Problem Details)."
+        "API RESTful desenvolvida com **Spec-Driven Development (SDD)**, **SQLAlchemy 2.0 ORM**, "
+        "**Autenticação Stateless JWT (`HS256`) + RBAC (`PERSONAL` e `STUDENT`)** e tratamento de erros "
+        "padronizado pela **RFC 9457 (Problem Details)**.\n\n"
+        "### Passo a Passo Rápido para Testar `GET /api/v1/auth/me`:\n"
+        "1. Use o painel **Guia Passo a Passo** logo acima para autenticar com 1 clique como `PERSONAL` ou `STUDENT` (ou execute `POST /api/v1/auth/login` e cole o `accessToken` em **Autorizar JWT**).\n"
+        "2. Abra `GET /api/v1/auth/me` (`#/Authentication/get_me_api_v1_auth_me_get`) e clique em **Executar Requisição** para receber `200` com seu perfil.\n"
+        "3. Remova o token no botão do Passo 3 e execute novamente para validar o erro `401` no padrão **RFC 9457**."
     ),
     version="1.0.0",
+    openapi_tags=OPENAPI_TAGS_METADATA,
+    docs_url=None,
     lifespan=lifespan,
 )
+
+
+def custom_openapi() -> dict:
+    """Personaliza o esquema OpenAPI 3.1 traduzindo descrições padrões para português e unificando erros na RFC 9457."""
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    from fastapi.openapi.utils import get_openapi
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=OPENAPI_TAGS_METADATA,
+    )
+
+    for path_item in openapi_schema.get("paths", {}).values():
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+
+            for param in operation.get("parameters", []):
+                p_name = param.get("name", "")
+                if p_name in PARAM_TITLE_TRANSLATIONS and "schema" in param:
+                    param["schema"]["title"] = PARAM_TITLE_TRANSLATIONS[p_name]
+
+            responses = operation.get("responses", {})
+            for code, resp_obj in responses.items():
+                if not isinstance(resp_obj, dict):
+                    continue
+                if resp_obj.get("description") == "Successful Response":
+                    if code == "201":
+                        resp_obj["description"] = "Recurso criado com sucesso."
+                    elif code == "204":
+                        resp_obj["description"] = "Operação concluída com sucesso (sem conteúdo no corpo)."
+                    else:
+                        resp_obj["description"] = "Operação realizada com sucesso."
+                elif code == "422" and resp_obj.get("description") == "Validation Error":
+                    resp_obj["description"] = (
+                        "Erro de Validação Semântica (Padrão RFC 9457 Problem Details)."
+                    )
+                    resp_obj["content"] = {
+                        "application/problem+json": {
+                            "schema": {"$ref": "#/components/schemas/ApiError"}
+                        }
+                    }
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi  # type: ignore[method-assign]
 
 app.add_middleware(
     CORSMiddleware,
@@ -1345,6 +2050,12 @@ app.include_router(workouts.router)
 app.include_router(executions.router)
 
 
+@app.get("/docs", response_class=HTMLResponse, include_in_schema=False)
+def custom_swagger_ui_docs() -> HTMLResponse:
+    """Documentação Swagger UI aprimorada em português com guia passo a passo e autenticação JWT em 1 clique."""
+    return HTMLResponse(content=SWAGGER_DOCS_HTML)
+
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
 def interactive_dashboard() -> HTMLResponse:
@@ -1352,6 +2063,11 @@ def interactive_dashboard() -> HTMLResponse:
     return HTMLResponse(content=DASHBOARD_HTML)
 
 
-@app.get("/health", tags=["Health"])
+@app.get(
+    "/health",
+    tags=["Health"],
+    summary="Verificar disponibilidade e saúde da GymFlow API",
+    response_description="Status operacional da API retornado com sucesso.",
+)
 def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "GymFlow API", "version": "1.0.0"}

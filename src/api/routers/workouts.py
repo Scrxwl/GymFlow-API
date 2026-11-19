@@ -61,9 +61,11 @@ def list_workouts(
 
     if current_user.role == UserRole.STUDENT.value:
         stmt = stmt.where(WorkoutPlanModel.student_id == current_user.id)
-    elif studentId is not None:
-        valid_student_id = validate_uuid_param(studentId, param_name="studentId")
-        stmt = stmt.where(WorkoutPlanModel.student_id == valid_student_id)
+    else:
+        stmt = stmt.where(WorkoutPlanModel.personal_id == current_user.id)
+        if studentId is not None:
+            valid_student_id = validate_uuid_param(studentId, param_name="studentId")
+            stmt = stmt.where(WorkoutPlanModel.student_id == valid_student_id)
 
     if status_filter is not None:
         stmt = stmt.where(WorkoutPlanModel.status == status_filter.value)
@@ -113,6 +115,13 @@ def create_workout_plan(
         raise ApiErrorException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Aluno com id '{payload.studentId}' não foi encontrado.",
+            instance=str(request.url.path),
+        )
+
+    if student.personal_id is not None and student.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você só pode prescrever fichas de treino para alunos da sua própria carteira.",
             instance=str(request.url.path),
         )
 
@@ -188,6 +197,21 @@ def get_workout_by_id(
             detail=f"Plano de treino com id '{valid_id}' não foi encontrado.",
             instance=str(request.url.path),
         )
+
+    if current_user.role == UserRole.STUDENT.value and plan.student_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Um aluno só pode consultar os seus próprios planos de treino.",
+            instance=str(request.url.path),
+        )
+
+    if current_user.role == UserRole.PERSONAL.value and plan.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este plano de treino pertence à carteira de outro Personal Trainer.",
+            instance=str(request.url.path),
+        )
+
     return WorkoutPlanResponse.model_validate(plan)
 
 
@@ -210,6 +234,13 @@ def update_workout_plan(
         raise ApiErrorException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Plano de treino com id '{valid_id}' não foi encontrado.",
+            instance=str(request.url.path),
+        )
+
+    if plan.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você só pode gerenciar planos de treino prescritos na sua própria carteira.",
             instance=str(request.url.path),
         )
 
@@ -256,6 +287,13 @@ def delete_workout_plan(
             instance=str(request.url.path),
         )
 
+    if plan.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você só pode remover planos de treino prescritos na sua própria carteira.",
+            instance=str(request.url.path),
+        )
+
     try:
         db.delete(plan)
         db.commit()
@@ -285,6 +323,13 @@ def add_routine_to_workout(
         raise ApiErrorException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Plano de treino com id '{valid_id}' não foi encontrado.",
+            instance=str(request.url.path),
+        )
+
+    if plan.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você só pode adicionar rotinas a planos de treino da sua própria carteira.",
             instance=str(request.url.path),
         )
 
@@ -348,6 +393,16 @@ def add_exercise_to_routine(
             instance=str(request.url.path),
         )
 
+    plan = db.scalar(
+        select(WorkoutPlanModel).where(WorkoutPlanModel.id == routine.workout_plan_id)
+    )
+    if plan and plan.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você só pode adicionar exercícios a rotinas da sua própria carteira.",
+            instance=str(request.url.path),
+        )
+
     new_ex = WorkoutExerciseModel(
         routine_id=routine.id,
         name=payload.name,
@@ -391,6 +446,20 @@ def delete_exercise(
             detail=f"Exercício com id '{valid_id}' não foi encontrado.",
             instance=str(request.url.path),
         )
+
+    routine = db.scalar(
+        select(WorkoutRoutineModel).where(WorkoutRoutineModel.id == exercise.routine_id)
+    )
+    if routine:
+        plan = db.scalar(
+            select(WorkoutPlanModel).where(WorkoutPlanModel.id == routine.workout_plan_id)
+        )
+        if plan and plan.personal_id != current_user.id:
+            raise ApiErrorException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você só pode remover exercícios de rotinas da sua própria carteira.",
+                instance=str(request.url.path),
+            )
 
     try:
         db.delete(exercise)

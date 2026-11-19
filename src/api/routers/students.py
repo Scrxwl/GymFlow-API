@@ -186,6 +186,17 @@ def get_student_by_id(
             instance=str(request.url.path),
         )
 
+    if (
+        current_user.role == UserRole.PERSONAL.value
+        and student.personal_id is not None
+        and student.personal_id != current_user.id
+    ):
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este aluno pertence à carteira de outro Personal Trainer.",
+            instance=str(request.url.path),
+        )
+
     return StudentResponse.model_validate(student)
 
 
@@ -212,6 +223,13 @@ def update_student(
         raise ApiErrorException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Aluno com id '{valid_id}' não foi encontrado.",
+            instance=str(request.url.path),
+        )
+
+    if student.personal_id is not None and student.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este aluno pertence à carteira de outro Personal Trainer.",
             instance=str(request.url.path),
         )
 
@@ -278,6 +296,13 @@ def delete_student(
             instance=str(request.url.path),
         )
 
+    if student.personal_id is not None and student.personal_id != current_user.id:
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este aluno pertence à carteira de outro Personal Trainer.",
+            instance=str(request.url.path),
+        )
+
     try:
         db.delete(student)
         db.commit()
@@ -318,6 +343,17 @@ def get_student_analytics(
         raise ApiErrorException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Um aluno só pode consultar seus próprios indicadores.",
+            instance=str(request.url.path),
+        )
+
+    if (
+        current_user.role == UserRole.PERSONAL.value
+        and student.personal_id is not None
+        and student.personal_id != current_user.id
+    ):
+        raise ApiErrorException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Este aluno pertence à carteira de outro Personal Trainer.",
             instance=str(request.url.path),
         )
 

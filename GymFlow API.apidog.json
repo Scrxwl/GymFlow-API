@@ -239,6 +239,74 @@
         }
       }
     },
+    "/api/v1/students/{studentId}/analytics": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "Obter indicadores biométricos (IMC) e estatísticas RPE do aluno",
+        "description": "Calcula automaticamente o IMC (BMI), a classificação biométrica OMS, o total de fichas ativas, minutos totais treinados e a média de intensidade RPE Borg (1 a 10). Acessível pelo Personal responsável ou pelo próprio aluno.",
+        "operationId": "getStudentAnalytics",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "studentId",
+            "in": "path",
+            "required": true,
+            "description": "UUID do aluno.",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indicadores biométricos e de engajamento retornados com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["studentId", "studentName", "activeWorkoutPlans", "totalExecutions", "totalDurationMinutes", "averageRpeScore"],
+                  "properties": {
+                    "studentId": { "type": "string", "format": "uuid", "example": "22222222-2222-2222-2222-222222222222" },
+                    "studentName": { "type": "string", "example": "Rodrigo Yoshi" },
+                    "goal": { "type": "string", "nullable": true, "example": "HYPERTROPHY" },
+                    "weightKg": { "type": "number", "nullable": true, "example": 78.5 },
+                    "heightCm": { "type": "number", "nullable": true, "example": 178.0 },
+                    "bmi": { "type": "number", "nullable": true, "example": 24.78 },
+                    "bmiClassification": { "type": "string", "nullable": true, "example": "Peso normal (Eutrófico)" },
+                    "activeWorkoutPlans": { "type": "integer", "example": 1 },
+                    "totalExecutions": { "type": "integer", "example": 3 },
+                    "totalDurationMinutes": { "type": "integer", "example": 165 },
+                    "averageRpeScore": { "type": "number", "example": 8.0 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente ou inválido.",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ApiError" }
+              }
+            }
+          },
+          "403": {
+            "description": "Acesso proibido: aluno tentando consultar indicadores de terceiros.",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ApiError" }
+              }
+            }
+          },
+          "404": {
+            "description": "Aluno não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ApiError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workouts": {
       "get": {
         "tags": ["Workouts"],
@@ -631,6 +699,33 @@
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ApiError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Healthcheck de disponibilidade do serviço",
+        "description": "Verifica o status operacional da GymFlow API.",
+        "operationId": "healthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Serviço operacional.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "service", "version"],
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "service": { "type": "string", "example": "GymFlow API" },
+                    "version": { "type": "string", "example": "1.0.0" }
+                  }
+                }
               }
             }
           }
@@ -1293,6 +1388,10 @@
     }
   },
   "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Ambiente Local (FastAPI + SQLite)"
+    },
     {
       "url": "https://prod.your-api-server.com",
       "description": "Amb. de Produção"

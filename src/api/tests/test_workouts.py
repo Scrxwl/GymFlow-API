@@ -113,3 +113,66 @@ def test_create_update_delete_workout_and_subresources(
     # Remove o plano de treino -> 204 No Content
     del_plan = client.delete(f"/api/v1/workouts/{workout_id}", headers=personal_headers)
     assert del_plan.status_code == 204
+
+
+def test_workout_horizontal_rbac_isolation(
+    client: TestClient,
+    personal_headers: dict[str, str],
+) -> None:
+    """Garante que um aluno não veja ficha de outro aluno e outro Personal não altere ficha alheia."""
+    # Personal 1 cria outra aluna
+    client.post(
+        "/api/v1/students",
+        json={
+            "name": "Julia Aluna",
+            "email": "julia@gymflow.dev",
+            "password": "Julia@2026",
+            "profile": {"goal": "CONDITIONING"},
+        },
+        headers=personal_headers,
+    )
+    login_julia = client.post(
+        "/api/v1/auth/login",
+        json={"email": "julia@gymflow.dev", "password": "Julia@2026"},
+    )
+    julia_headers = {"Authorization": f"Bearer {login_julia.json()['accessToken']}"}
+
+    # Julia tenta acessar ficha de treino do Rodrigo (SEED_WORKOUT_ID) -> 403 Forbidden
+    res_julia = client.get(
+        f"/api/v1/workouts/{SEED_WORKOUT_ID}",
+        headers=julia_headers,
+    )
+    assert res_julia.status_code == 403
+
+    # Segundo Personal Trainer tenta alterar ou excluir ficha do Personal 1 -> 403 Forbidden
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "name": "Rafael Outro Personal",
+            "email": "rafael.personal@gymflow.dev",
+            "password": "Personal@2026",
+            "role": "PERSONAL",
+            "cref": "112233-G/SP",
+        },
+    )
+    login_rafael = client.post(
+        "/api/v1/auth/login",
+        json={"email": "rafael.personal@gymflow.dev", "password": "Personal@2026"},
+    )
+    rafael_headers = {"Authorization": f"Bearer {login_rafael.json()['accessToken']}"}
+
+    assert (
+        client.patch(
+            f"/api/v1/workouts/{SEED_WORKOUT_ID}",
+            json={"title": "Alteração Indevida"},
+            headers=rafael_headers,
+        ).status_code
+        == 403
+    )
+    assert (
+        client.delete(
+            f"/api/v1/workouts/{SEED_WORKOUT_ID}",
+            headers=rafael_headers,
+        ).status_code
+        == 403
+    )
